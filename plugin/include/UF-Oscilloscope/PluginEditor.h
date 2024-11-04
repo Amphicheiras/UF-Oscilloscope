@@ -28,6 +28,11 @@ private:
     juce::Slider gainSlider;
     juce::Label gainLabel;
 
+    juce::ToggleButton syncButton;
+    juce::Label syncLabel;
+
+    void setupSliders();
+
     juce::AudioBuffer<float> audioBuffer;
     void drawWaveform(juce::Graphics &g);
     void timerCallback() override;

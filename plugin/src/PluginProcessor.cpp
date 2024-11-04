@@ -132,6 +132,7 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         buffer.clear(i, 0, numSamples);
     // **************************************************
 
+    setBPM();
     audioBuffer.setSize(buffer.getNumChannels(), numSamples);
     audioBuffer.copyFrom(0, 0, buffer, 0, 0, numSamples);
 }
@@ -162,22 +163,18 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes)
     juce::ignoreUnused(data, sizeInBytes);
 }
 
-#pragma warning(push)
-#pragma warning(disable : 4996)
-double PluginProcessor::getBPM()
+void PluginProcessor::setBPM()
 {
-    if (auto *audioPlayHead = getPlayHead())
-    {
-        juce::AudioPlayHead::CurrentPositionInfo posInfo;
-        if (audioPlayHead->getCurrentPosition(posInfo))
-        {
-            if (posInfo.bpm > 0.0)
-                return posInfo.bpm;
-        }
-    }
-    return 0.0; // if BPM not available
+    if (getPlayHead()->getPosition()->getBpm().hasValue())
+        bpm = getPlayHead()->getPosition()->getBpm();
+    else
+        bpm = 0.0;
 }
-#pragma warning(pop)
+
+juce::Optional<double> PluginProcessor::getBPM()
+{
+    return bpm;
+}
 
 // This creates new instances of the plugin.
 // This function definition must be in the global namespace.

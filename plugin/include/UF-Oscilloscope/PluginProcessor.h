@@ -40,10 +40,13 @@ public:
     // ***********************************************************
 
     const juce::AudioBuffer<float> &getAudioBuffer() const { return audioBuffer; }
-    double getBPM();
+    void setBPM();
+    juce::Optional<double> getBPM();
 
 private:
     juce::AudioBuffer<float> audioBuffer;
+
+    juce::Optional<double> bpm;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };
