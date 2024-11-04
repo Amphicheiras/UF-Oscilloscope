@@ -1,5 +1,6 @@
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
 #include "UF-Oscilloscope/PluginProcessor.h"
 
 class PluginEditor final : public juce::AudioProcessorEditor, private juce::Timer
@@ -36,6 +37,14 @@ private:
     juce::AudioBuffer<float> audioBuffer;
     void drawWaveform(juce::Graphics &g);
     void timerCallback() override;
+    juce::Image oscillatorLogo;
+
+    void loadLogo();
+    float left;
+    float right;
+    float top;
+    float bottom;
+    float strokeSize = 2.5f; // Stroke width for the rectangle
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
 };
