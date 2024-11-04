@@ -6,11 +6,6 @@ PluginEditor::PluginEditor(
     : AudioProcessorEditor(&p), audioProcessor(p), bufferSlider()
 {
     juce::ignoreUnused(audioProcessor);
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-
-    addAndMakeVisible(audioProcessor.oscilloscope);
-    audioProcessor.oscilloscope.setColours(juce::Colours::black, juce::Colours::blueviolet);
 
     addAndMakeVisible(bufferSlider);
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
@@ -18,28 +13,54 @@ PluginEditor::PluginEditor(
     bufferSlider.setRange(32, 1024, 1);
     bufferSlider.onValueChange = [this]()
     {
-        audioProcessor.oscilloscope.setBufferSize((int)bufferSlider.getValue());
+        // audioProcessor.oscilloscope.setBufferSize((int)bufferSlider.getValue());
+    };
+
+    addAndMakeVisible(gainSlider);
+    gainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 60, 20);
+    gainSlider.setRange(-60, 12, 1);
+    gainSlider.onValueChange = [this]()
+    {
+        // audioProcessor.setGain((float)gainSlider.getValue());
     };
 
     setSize(400, 400);
+    startTimerHz(30);
 }
 
 PluginEditor::~PluginEditor() {}
 
 void PluginEditor::paint(juce::Graphics &g)
 {
-    // (Our component is opaque, so we must completely fill the background with a
-    // solid colour)
-    g.fillAll(juce::Colours::black.brighter(0.1f));
-
-    g.setColour(juce::Colours::white);
-    g.setFont(15.0f);
-    g.drawFittedText("Your plugin says hi!", getLocalBounds(),
-                     juce::Justification::centred, 1);
+    g.fillAll(juce::Colours::blueviolet);
+    drawWaveform(g);
 }
 
 void PluginEditor::resized()
 {
-    audioProcessor.oscilloscope.setBounds(getLocalBounds().withSizeKeepingCentre(static_cast<int>((float)getWidth() * 0.5), static_cast<int>((float)getHeight() * 0.5)));
-    bufferSlider.setBounds(audioProcessor.oscilloscope.getX() + audioProcessor.oscilloscope.getWidth(), audioProcessor.oscilloscope.getY(), 128, audioProcessor.oscilloscope.getHeight());
+    bufferSlider.setBounds(200, 300, 100, 100);
+    gainSlider.setBounds(100, 300, 100, 100);
+}
+
+void PluginEditor::timerCallback()
+{
+    audioBuffer = audioProcessor.getAudioBuffer();
+    repaint();
+}
+
+void PluginEditor::drawWaveform(juce::Graphics &g)
+{
+    const int width = getWidth();
+    const int height = getHeight();
+    g.setColour(juce::Colours::white);
+    const int numSamples = audioBuffer.getNumSamples();
+    for (int i = 1; i < numSamples; ++i)
+    {
+        float y1 = height / 2.0f + audioBuffer.getSample(0, i - 1) * height / 2.0f;
+        float y2 = height / 2.0f + audioBuffer.getSample(0, i) * height / 2.0f;
+
+        g.drawLine((float)((i - 1) * width / numSamples), y1,
+                   (float)(i * width / numSamples), y2);
+    }
 }

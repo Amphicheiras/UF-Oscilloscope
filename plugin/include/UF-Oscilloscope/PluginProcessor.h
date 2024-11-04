@@ -37,8 +37,10 @@ public:
     void getStateInformation(juce::MemoryBlock &destData) override;
     void setStateInformation(const void *data, int sizeInBytes) override;
 
-    juce::AudioVisualiserComponent oscilloscope;
+    const juce::AudioBuffer<float> &getAudioBuffer() const { return audioBuffer; }
 
 private:
+    juce::AudioBuffer<float> audioBuffer;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };

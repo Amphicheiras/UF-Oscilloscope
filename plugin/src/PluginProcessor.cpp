@@ -10,11 +10,8 @@ PluginProcessor::PluginProcessor()
 #endif
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-              ),
-      oscilloscope(1)
+      )
 {
-    oscilloscope.setRepaintRate(30);
-    oscilloscope.setBufferSize(256);
 }
 
 PluginProcessor::~PluginProcessor() {}
@@ -153,7 +150,8 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         // ..do something to the data...
     }
 
-    oscilloscope.pushBuffer(buffer);
+    audioBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples());
+    audioBuffer.copyFrom(0, 0, buffer, 0, 0, buffer.getNumSamples());
 }
 
 bool PluginProcessor::hasEditor() const
