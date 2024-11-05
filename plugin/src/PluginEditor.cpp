@@ -179,7 +179,7 @@ void PluginEditor::setupSliders()
 
 void PluginEditor::loadLogo()
 {
-    juce::File speakerImageFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("resources/images/oscillatorLogo.png");
+    juce::File speakerImageFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("UF0/UF00/resources/images/oscillatorLogo.png");
     if (speakerImageFile.existsAsFile())
     {
         oscillatorLogo = juce::ImageFileFormat::loadFrom(speakerImageFile);
