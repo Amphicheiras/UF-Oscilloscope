@@ -16,8 +16,8 @@
 
 1. Clone the repository:
     ```sh
-     git clone https://github.com/Amphicheiras/3D-Spatial-Audio.git
-     cd 3D-Spatial-Audio 
+     git clone https://github.com/Amphicheiras/UF-Oscilloscope.git
+     cd UF-Oscilloscope
     ```
 
 2. Configure with CMake:
