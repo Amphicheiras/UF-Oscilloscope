@@ -32,7 +32,7 @@
    cmake --build build
    ```
 
-4. Place "UF0/UF00/resources/images" in you OS's "Documents" folder.
+4. Place "UF0/UF00/resources/images" in your OS's "Documents" folder.
 
 ### Usage
 
