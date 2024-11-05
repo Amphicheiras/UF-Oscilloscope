@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 
-project(3DAudioPlugin VERSION 0.1.0)
+project(UF-Oscilloscope VERSION 0.1.0)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/UF-Oscilloscope")
 
@@ -51,4 +51,6 @@ else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+## ***** COMMENT-OUT IF USING LOCAL JUCE LIB ******
+# source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+## ************************************************
