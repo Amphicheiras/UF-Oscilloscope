@@ -20,6 +20,8 @@
      cd UF-Oscilloscope
     ```
 
+2. Have a look at the /root and /plugin CMakeLists.txt
+
 2. Configure with CMake:
    ```sh
    cmake -S . -B build
@@ -29,6 +31,8 @@
    ```sh
    cmake --build build
    ```
+
+4. Place "UF0/UF00/resources/images" in your OS's "Documents" folder.
 
 ### Usage
 

@@ -21,6 +21,7 @@ target_sources(${PROJECT_NAME}
         src/PluginProcessor.cpp
         ${INCLUDE_DIR}/PluginEditor.h
         ${INCLUDE_DIR}/PluginProcessor.h
+        ${INCLUDE_DIR}/CustomLookAndFeel.h
 )
 
 target_include_directories(${PROJECT_NAME}
