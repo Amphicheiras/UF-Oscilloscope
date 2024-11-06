@@ -13,7 +13,11 @@ PluginEditor::PluginEditor(
     startTimerHz(60);
 }
 
-PluginEditor::~PluginEditor() {}
+PluginEditor::~PluginEditor()
+{
+    gainSlider.setLookAndFeel(nullptr);
+    bufferSlider.setLookAndFeel(nullptr);
+}
 
 void PluginEditor::paint(juce::Graphics &g)
 {
@@ -115,18 +119,24 @@ void PluginEditor::setYScale(float newYScale)
 
 void PluginEditor::setupSliders()
 {
+    customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     addAndMakeVisible(bufferSlider);
     bufferSlider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::wheat);
     bufferSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
+    bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     bufferSlider.setRange(0.1, 10, 1);
     bufferSlider.setValue(1.0);
-    bufferSlider.setTextValueSuffix("ms");
+    bufferSlider.addListener(this);
+    bufferSlider.setTextValueSuffix("");
     bufferSlider.onValueChange = [this]()
     {
         setXScale((float)bufferSlider.getValue());
     };
+    // bufferSlider.onDoubleClick = [this]() {
+
+    // };
     addAndMakeVisible(bufferLabel);
     bufferLabel.setName("bufferLabel");
     bufferLabel.setColour(juce::Label::textColourId, juce::Colours::wheat);
@@ -138,6 +148,7 @@ void PluginEditor::setupSliders()
     gainSlider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::wheat);
     gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
     gainSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
+    gainSlider.setLookAndFeel(customLookAndFeel.get());
     gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     gainSlider.setRange(0.1, 6, 0.1);
     gainSlider.setValue(1.0);
@@ -189,4 +200,28 @@ void PluginEditor::loadLogo()
     DBG("UF-0scillator logo not found @: " + speakerImageFile.getFullPathName());
     jassertfalse;
     oscillatorLogo = juce::Image();
+}
+
+void PluginEditor::mouseDoubleClick(const juce::MouseEvent &event)
+{
+    if (event.eventComponent == &bufferSlider)
+    {
+        bufferSlider.setValue(-60.0f, juce::sendNotification);
+    }
+    else if (event.eventComponent == &gainSlider)
+    {
+        gainSlider.setValue(0.0f, juce::sendNotification);
+    }
+}
+
+void PluginEditor::sliderValueChanged(juce::Slider *slider)
+{
+    if (slider == &bufferSlider)
+    {
+        setXScale((float)bufferSlider.getValue());
+    }
+    else if (slider == &gainSlider)
+    {
+        setYScale((float)gainSlider.getValue());
+    }
 }
