@@ -1,6 +1,6 @@
 # Oscilloscope Audio Plugin
 
-  <img src="https://github.com/Amphicheiras/UF-Oscilloscope/blob/development-amphicheiras/github/uf00.png?raw=true" alt="right" width="250">
+  <img src="https://github.com/Amphicheiras/UF-Oscilloscope/blob/dev-amphicheiras/github/uf00.png?raw=true" alt="right" width="250">
 
 ## Features
 
