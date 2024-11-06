@@ -42,11 +42,11 @@ void PluginEditor::resized()
 {
     auto gainSliderWidth = 70;
     auto gainSliderHeight = 100;
-    gainSlider.setBounds(1 * getWidth() / 6 - gainSliderWidth / 2, 385, gainSliderWidth, gainSliderHeight);
+    gainSlider.setBounds(1 * getWidth() / 6 - gainSliderWidth / 2 + 40, 385, gainSliderWidth, gainSliderHeight);
 
     auto bufferSliderWidth = 70;
     auto bufferSliderHeight = 100;
-    bufferSlider.setBounds(5 * getWidth() / 6 - bufferSliderWidth / 2, 385, bufferSliderWidth, bufferSliderHeight);
+    bufferSlider.setBounds(5 * getWidth() / 6 - bufferSliderWidth / 2 - 40, 385, bufferSliderWidth, bufferSliderHeight);
 
     auto syncButtonWidth = 40;
     auto syncButtonHeight = 100;
