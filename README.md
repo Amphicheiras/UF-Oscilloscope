@@ -3,7 +3,9 @@
 
 ## Features
 
-
+- Input gain to scale Y axis
+- Input buffer length to scale X axis
+- Sync button to match the draw rate with the BPM of the DAW
 
 ## Getting Started
 ### Prerequisites
