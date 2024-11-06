@@ -1,8 +1,12 @@
 # Oscilloscope Audio Plugin
 
+  <img src="https://github.com/Amphicheiras/3D-Spatial-Audio/blob/development-amphicheiras/github/spatialAudioR.png?raw=true" alt="right" width="250">
 
 ## Features
 
+- Time scale
+- Gain scale
+- Sync button
 
 
 ## Getting Started
