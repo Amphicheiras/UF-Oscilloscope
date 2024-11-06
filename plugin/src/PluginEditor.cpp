@@ -126,7 +126,7 @@ void PluginEditor::setupSliders()
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    bufferSlider.setRange(0.1, 10, 1);
+    bufferSlider.setRange(0.1, 10, 0.1);
     bufferSlider.setValue(1.0);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
