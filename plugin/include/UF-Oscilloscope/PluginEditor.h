@@ -2,8 +2,11 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "UF-Oscilloscope/PluginProcessor.h"
+#include "UF-Oscilloscope/CustomLookAndFeel.h"
 
-class PluginEditor final : public juce::AudioProcessorEditor, private juce::Timer
+class PluginEditor final : public juce::AudioProcessorEditor,
+                           private juce::Slider::Listener,
+                           private juce::Timer
 {
 public:
     explicit PluginEditor(PluginProcessor &);
@@ -11,6 +14,7 @@ public:
 
     void paint(juce::Graphics &) override;
     void resized() override;
+    void timerCallback() override;
 
     void setXScale(float newXScale);
     void setYScale(float newYScale);
@@ -22,6 +26,8 @@ private:
 
     float xScale = 1.0f;
     float yScale = 1.0f;
+
+    std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
 
     juce::Slider bufferSlider;
     juce::Label bufferLabel;
@@ -36,8 +42,10 @@ private:
 
     juce::AudioBuffer<float> audioBuffer;
     void drawWaveform(juce::Graphics &g);
-    void timerCallback() override;
     juce::Image oscillatorLogo;
+
+    void mouseDoubleClick(const juce::MouseEvent &event) override;
+    void sliderValueChanged(juce::Slider *slider) override;
 
     void loadLogo();
     float left;
