@@ -9,6 +9,7 @@
 - Sync button to match the draw rate with the BPM of the DAW
 
 ## Getting Started
+
 ### Prerequisites
 
 - JUCE Framework: Required for building and running the plugin. Download from JUCE.
