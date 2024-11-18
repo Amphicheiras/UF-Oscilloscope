@@ -7,6 +7,11 @@
 - Input gain to scale Y axis
 - Input buffer length to scale X axis
 - Sync button to match the draw rate with the BPM of the DAW
+- Multi-Channel Monitoring (TBA)
+  - Sidechain (only 1 channel)
+  - Utility plugin instances on every channel you want to draw it's waveform (messy)
+  - Route "Audio To" the Plugin's channel (audio goes only through that channel (not master channel directly), cannot send to more than 1 oscilloscope instances)
+  - ?
 
 ## Getting Started
 
