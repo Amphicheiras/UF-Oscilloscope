@@ -40,7 +40,10 @@ private:
 
     void setupSliders();
 
-    juce::AudioBuffer<float> audioBuffer;
+    juce::AudioBuffer<float> drawBuffer0;
+    juce::AudioBuffer<float> drawBuffer1;
+    juce::AudioBuffer<float> drawBuffer2;
+
     void drawWaveform(juce::Graphics &g);
     juce::Image oscillatorLogo;
 
@@ -48,6 +51,7 @@ private:
     void sliderValueChanged(juce::Slider *slider) override;
 
     void loadLogo();
+
     float left;
     float right;
     float top;

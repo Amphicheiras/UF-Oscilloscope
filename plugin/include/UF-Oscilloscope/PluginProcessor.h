@@ -39,12 +39,30 @@ public:
 
     // ***********************************************************
 
-    const juce::AudioBuffer<float> &getAudioBuffer() const { return audioBuffer; }
+    const juce::AudioBuffer<float> &getAudioBuffer(int channel) const
+    {
+        if (channel == 0)
+        {
+            return mainInputBuffer;
+        }
+        else if (channel == 1)
+        {
+            return sidechainBuffer0;
+        }
+        else if (channel == 2)
+        {
+            return sidechainBuffer1;
+        }
+        return mainInputBuffer;
+    }
+
     void setBPM();
     juce::Optional<double> getBPM();
 
 private:
-    juce::AudioBuffer<float> audioBuffer;
+    juce::AudioBuffer<float> mainInputBuffer;
+    juce::AudioBuffer<float> sidechainBuffer0;
+    juce::AudioBuffer<float> sidechainBuffer1;
 
     juce::Optional<double> bpm;
 
