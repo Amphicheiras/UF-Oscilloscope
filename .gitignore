@@ -4,3 +4,4 @@ cmake.check_cache
 CmakeSystem.cmake
 CMakeFiles/CMakeConfigureLog.yaml
 CMakeLists.txt
+x86_64-win.lnk
