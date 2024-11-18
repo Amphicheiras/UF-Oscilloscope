@@ -86,9 +86,11 @@ void PluginProcessor::changeProgramName(int index,
 
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
     juce::ignoreUnused(sampleRate, samplesPerBlock);
+    mainInputBufferHistory.setSize(2, historyBufferSize);
+    sidechainBuffer0History.setSize(2, historyBufferSize);
+    sidechainBuffer1History.setSize(2, historyBufferSize);
+    // clear the buffer with zeroes
     mainInputBufferHistory.clear();
     sidechainBuffer0History.clear();
     sidechainBuffer1History.clear();
@@ -144,20 +146,20 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         buffer.clear(i, 0, numSamples);
     // **************************************************
 
-    addToAudioHistory(0, mainInputBuffer);
+    processBufferHistory(mainInputBufferHistory, mainInputBuffer, 2, numSamples);
     output.copyFrom(0, 0, mainInputBuffer, 0, 0, numSamples);
     output.copyFrom(1, 0, mainInputBuffer, 1, 0, numSamples);
 
     if (sidechainBuffer0.getNumChannels() > 1)
     {
-        addToAudioHistory(1, sidechainBuffer0);
+        processBufferHistory(sidechainBuffer0History, sidechainBuffer0, 2, numSamples);
         output.addFrom(0, 0, sidechainBuffer0, 0, 0, numSamples);
         output.addFrom(1, 0, sidechainBuffer0, 1, 0, numSamples);
     }
 
     if (sidechainBuffer1.getNumChannels() > 1)
     {
-        addToAudioHistory(2, sidechainBuffer1);
+        processBufferHistory(sidechainBuffer1History, sidechainBuffer1, 2, numSamples);
         output.addFrom(0, 0, sidechainBuffer1, 0, 0, numSamples);
         output.addFrom(1, 0, sidechainBuffer1, 1, 0, numSamples);
     }
@@ -204,40 +206,8 @@ juce::Optional<double> PluginProcessor::getBPM()
     return bpm;
 }
 
-// This creates new instances of the plugin.
-// This function definition must be in the global namespace.
-juce::AudioProcessor *JUCE_CALLTYPE
-createPluginFilter()
-{
-    return new PluginProcessor();
-}
-
-// Add audio buffer to history
-void PluginProcessor::addToAudioHistory(int channel, const juce::AudioBuffer<float> &buffer)
-{
-    std::deque<juce::AudioBuffer<float>> *targetHistory = nullptr;
-
-    // Select the appropriate history buffer
-    if (channel == 0)
-        targetHistory = &mainInputBufferHistory;
-    else if (channel == 1)
-        targetHistory = &sidechainBuffer0History;
-    else if (channel == 2)
-        targetHistory = &sidechainBuffer1History;
-
-    if (targetHistory)
-    {
-        // Push a copy of the buffer into the history
-        targetHistory->emplace_back(buffer);
-
-        // Trim history if it exceeds the maximum size
-        while (targetHistory->size() > maxHistorySize)
-            targetHistory->pop_front();
-    }
-}
-
 // Get audio history
-const std::deque<juce::AudioBuffer<float>> &PluginProcessor::getAudioHistory(int channel) const
+const juce::AudioBuffer<float> &PluginProcessor::getHistoryBuffer(int channel) const
 {
     if (channel == 0)
         return mainInputBufferHistory;
@@ -245,6 +215,50 @@ const std::deque<juce::AudioBuffer<float>> &PluginProcessor::getAudioHistory(int
         return sidechainBuffer0History;
     else if (channel == 2)
         return sidechainBuffer1History;
-
     return mainInputBufferHistory;
+}
+
+void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples)
+{
+    // If history buffer is smaller than the audio buffer
+    if (historyBufferSize < numSamples)
+    {
+        // Store the first 'historyBufferSize' samples (mono example, adjust for multi-channel)
+        for (int i = 0; i < numChannels; ++i)
+        {
+            float *historyChannelPointer = historyBuffer.getWritePointer(i); // Get write pointer for each channel
+
+            for (int j = 0; j < historyBufferSize; ++j)
+            {
+                if (j < numSamples)
+                {
+                    historyChannelPointer[j] = buffer.getReadPointer(i)[j]; // Copy samples
+                }
+            }
+        }
+    }
+    else
+    {
+        // Add the current buffer to the history buffer (circular buffer)
+        for (int i = 0; i < numChannels; ++i)
+        {
+            float *historyChannelPointer = historyBuffer.getWritePointer(i); // Get write pointer for each channel
+
+            for (int j = 0; j < numSamples; ++j)
+            {
+                // DBG("index: " << currentIndex << " j " << j << " buiffer size" << historyBufferSize);
+                historyChannelPointer[(currentIndex + j) % historyBufferSize] = buffer.getReadPointer(i)[j];
+            }
+        }
+
+        currentIndex = (currentIndex + numSamples) % historyBufferSize;
+    }
+}
+
+// This creates new instances of the plugin.
+// This function definition must be in the global namespace.
+juce::AudioProcessor *JUCE_CALLTYPE
+createPluginFilter()
+{
+    return new PluginProcessor();
 }

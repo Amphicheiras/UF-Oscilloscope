@@ -39,21 +39,39 @@ public:
 
     // ***********************************************************
 
-    const std::deque<juce::AudioBuffer<float>> &getAudioHistory(int channel) const;
-    void addToAudioHistory(int channel, const juce::AudioBuffer<float> &buffer);
+    void processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples);
+    const juce::AudioBuffer<float> &getHistoryBuffer(int channel) const;
+
+    void setHistorySize(int size)
+    {
+        if (size != historyBufferSize)
+        {
+            historyBufferSize = size;
+
+            // Resize and clear the buffers
+            mainInputBufferHistory.setSize(getTotalNumOutputChannels(), historyBufferSize);
+            mainInputBufferHistory.clear();
+
+            sidechainBuffer0History.setSize(2, historyBufferSize);
+            sidechainBuffer0History.clear();
+
+            sidechainBuffer1History.setSize(2, historyBufferSize);
+            sidechainBuffer1History.clear();
+        }
+    }
 
     void setBPM();
     juce::Optional<double> getBPM();
 
 private:
-    // History settings
-    const size_t maxHistorySize = 1; // Maximum number of buffers to keep in history
     juce::AudioBuffer<float> mainInputBuffer;
     juce::AudioBuffer<float> sidechainBuffer0;
     juce::AudioBuffer<float> sidechainBuffer1;
-    std::deque<juce::AudioBuffer<float>> mainInputBufferHistory;
-    std::deque<juce::AudioBuffer<float>> sidechainBuffer0History;
-    std::deque<juce::AudioBuffer<float>> sidechainBuffer1History;
+    int historyBufferSize = 4096;
+    int currentIndex = 0;
+    juce::AudioBuffer<float> mainInputBufferHistory;
+    juce::AudioBuffer<float> sidechainBuffer0History;
+    juce::AudioBuffer<float> sidechainBuffer1History;
 
     juce::Optional<double> bpm;
 

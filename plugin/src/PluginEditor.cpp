@@ -71,61 +71,77 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
     const float adjustedHeight = bottom - top;                                // Height of the drawing area
 
     // Fetch histories from the processor
-    const auto &mainHistory = audioProcessor.getAudioHistory(0);
-    const auto &sidechain0History = audioProcessor.getAudioHistory(1);
-    const auto &sidechain1History = audioProcessor.getAudioHistory(2);
+    const auto mainInputBufferHistory = audioProcessor.getHistoryBuffer(0);
+    const auto sidechainBuffer0History = audioProcessor.getHistoryBuffer(1);
+    const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(2);
 
     // Check if histories are empty
     // if (mainHistory.empty() && sidechain0History.empty() && sidechain1History.empty())
     //     return;
 
-    // Helper function to draw a waveform from a history of audio buffers
-    auto drawWaveformFromHistory = [&](const std::deque<juce::AudioBuffer<float>> &bufferHistory, juce::Colour color)
+    auto drawWaveformFromHistory = [&](const juce::AudioBuffer<float> &bufferHistory, juce::Colour color)
     {
-        // Loop through each buffer in the history
-        for (const auto &buffer : bufferHistory)
+        const int numSamples = bufferHistory.getNumSamples();
+        const int numChannels = bufferHistory.getNumChannels();
+
+        if (numSamples == 0 || numChannels == 0)
+            return;
+
+        // Calculate the step size to reduce samples for the display width
+        const int pixels = 400;                            // Width of the drawing window
+        const int step = std::max(1, numSamples / pixels); // Number of samples per pixel
+        const int reducedSamples = numSamples / step;
+
+        // Loop over the reduced sample set
+        for (int i = 1; i < reducedSamples; ++i)
         {
-            const int numSamples = buffer.getNumSamples();
-            if (numSamples == 0)
-                continue; // Skip empty buffers
+            // Calculate start and end indices for this step
+            const int startIdx = (i - 1) * step;
+            const int endIdx = juce::jmin(i * step, numSamples);
 
-            for (int i = 1; i < numSamples; ++i)
+            // Compute min and max samples for more visual accuracy
+            float minSample = 0.0f, maxSample = 0.0f;
+            for (int ch = 0; ch < numChannels; ++ch)
             {
-                // Adjust x positions based on the zoom scale
-                float x1 = left + ((i - 1) * adjustedWidth / numSamples) * xScale;
-                float x2 = left + (i * adjustedWidth / numSamples) * xScale;
-
-                // Ensure x1 and x2 are within bounds
-                x1 = std::min(x1, right);
-                x2 = std::min(x2, right);
-
-                // Get mono sample from stereo input (average of left and right channels)
-                float monoSample1 = 0.5f * (buffer.getSample(0, i - 1) + buffer.getSample(1, i - 1));
-                float monoSample2 = 0.5f * (buffer.getSample(0, i) + buffer.getSample(1, i));
-
-                // Calculate y positions, scaling to fit inside the rectangle's adjusted height
-                float y1 = top + adjustedHeight / 2.0f + monoSample1 * yScale * (adjustedHeight / 2.0f);
-                float y2 = top + adjustedHeight / 2.0f + monoSample2 * yScale * (adjustedHeight / 2.0f);
-
-                // Clamp y values to the rectangle's adjusted height
-                y1 = juce::jlimit(top, bottom, y1);
-                y2 = juce::jlimit(top, bottom, y2);
-
-                // Draw the waveform line
-                g.setColour(color);
-                g.drawLine(x1, y1, x2, y2, 2.5f);
+                for (int sample = startIdx; sample < endIdx; ++sample)
+                {
+                    const float currentSample = bufferHistory.getSample(ch, sample);
+                    minSample = std::min(minSample, currentSample);
+                    maxSample = std::max(maxSample, currentSample);
+                }
             }
+
+            // Calculate x positions
+            float x1 = left + ((i - 1) * adjustedWidth / reducedSamples) * xScale;
+            float x2 = left + (i * adjustedWidth / reducedSamples) * xScale;
+
+            // Ensure x1 and x2 are within bounds
+            x1 = std::min(x1, right);
+            x2 = std::min(x2, right);
+
+            // Calculate y positions for min and max
+            float yMin = top + adjustedHeight / 2.0f + minSample * yScale * (adjustedHeight / 2.0f);
+            float yMax = top + adjustedHeight / 2.0f + maxSample * yScale * (adjustedHeight / 2.0f);
+
+            // Clamp y values to the rectangle's adjusted height
+            yMin = juce::jlimit(top, bottom, yMin);
+            yMax = juce::jlimit(top, bottom, yMax);
+
+            // Draw the line
+            g.setColour(color);
+            g.drawLine(x1, yMin, x2, yMax, strokeSize);
         }
     };
 
-    drawWaveformFromHistory(mainHistory, juce::Colours::green);
-    drawWaveformFromHistory(sidechain0History, juce::Colours::red);
-    drawWaveformFromHistory(sidechain1History, juce::Colours::blue);
+    drawWaveformFromHistory(mainInputBufferHistory, juce::Colours::green);
+    drawWaveformFromHistory(sidechainBuffer0History, juce::Colours::red);
+    drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::blue);
 }
 
-void PluginEditor::setXScale(float newXScale)
+void PluginEditor::setXScale(int newXScale)
 {
-    xScale = newXScale;
+    // xScale = newXScale;
+    audioProcessor.setHistorySize(newXScale);
 }
 
 void PluginEditor::setYScale(float newYScale)
@@ -142,13 +158,13 @@ void PluginEditor::setupSliders()
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    bufferSlider.setRange(0.01, 10, 0.01);
-    bufferSlider.setValue(1.0);
+    bufferSlider.setRange(32, 8196, 1);
+    bufferSlider.setValue(4096);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
     bufferSlider.onValueChange = [this]()
     {
-        setXScale((float)bufferSlider.getValue());
+        setXScale(static_cast<int>(bufferSlider.getValue()));
     };
     // bufferSlider.onDoubleClick = [this]() {
 
@@ -234,7 +250,7 @@ void PluginEditor::sliderValueChanged(juce::Slider *slider)
 {
     if (slider == &bufferSlider)
     {
-        setXScale((float)bufferSlider.getValue());
+        setXScale((int)bufferSlider.getValue());
     }
     else if (slider == &gainSlider)
     {

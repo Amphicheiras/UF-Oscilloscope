@@ -16,7 +16,7 @@ public:
     void resized() override;
     void timerCallback() override;
 
-    void setXScale(float newXScale);
+    void setXScale(int newXScale);
     void setYScale(float newYScale);
 
 private:
@@ -48,7 +48,7 @@ private:
 
     void loadLogo();
 
-    float strokeSize = 2.5f; // Stroke width for the rectangle
+    float strokeSize = 1.f; // Stroke width for the rectangle
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
 };
