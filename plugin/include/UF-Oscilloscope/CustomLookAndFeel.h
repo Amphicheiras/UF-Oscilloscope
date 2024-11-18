@@ -1,7 +1,4 @@
-
 #include <juce_gui_basics/juce_gui_basics.h>
-// #include "juce_core/juce_core.h"
-// #include "juce_graphics/juce_graphics.h"
 
 class CustomLookAndFeel : public juce::LookAndFeel_V4
 {
