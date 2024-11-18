@@ -39,30 +39,21 @@ public:
 
     // ***********************************************************
 
-    const juce::AudioBuffer<float> &getAudioBuffer(int channel) const
-    {
-        if (channel == 0)
-        {
-            return mainInputBuffer;
-        }
-        else if (channel == 1)
-        {
-            return sidechainBuffer0;
-        }
-        else if (channel == 2)
-        {
-            return sidechainBuffer1;
-        }
-        return mainInputBuffer;
-    }
+    const std::deque<juce::AudioBuffer<float>> &getAudioHistory(int channel) const;
+    void addToAudioHistory(int channel, const juce::AudioBuffer<float> &buffer);
 
     void setBPM();
     juce::Optional<double> getBPM();
 
 private:
+    // History settings
+    const size_t maxHistorySize = 1; // Maximum number of buffers to keep in history
     juce::AudioBuffer<float> mainInputBuffer;
     juce::AudioBuffer<float> sidechainBuffer0;
     juce::AudioBuffer<float> sidechainBuffer1;
+    std::deque<juce::AudioBuffer<float>> mainInputBufferHistory;
+    std::deque<juce::AudioBuffer<float>> sidechainBuffer0History;
+    std::deque<juce::AudioBuffer<float>> sidechainBuffer1History;
 
     juce::Optional<double> bpm;
 

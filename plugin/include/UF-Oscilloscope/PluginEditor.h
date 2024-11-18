@@ -40,10 +40,6 @@ private:
 
     void setupSliders();
 
-    juce::AudioBuffer<float> drawBuffer0;
-    juce::AudioBuffer<float> drawBuffer1;
-    juce::AudioBuffer<float> drawBuffer2;
-
     void drawWaveform(juce::Graphics &g);
     juce::Image oscillatorLogo;
 
@@ -52,10 +48,6 @@ private:
 
     void loadLogo();
 
-    float left;
-    float right;
-    float top;
-    float bottom;
     float strokeSize = 2.5f; // Stroke width for the rectangle
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)

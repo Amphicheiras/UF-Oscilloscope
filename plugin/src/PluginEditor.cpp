@@ -27,10 +27,10 @@ void PluginEditor::paint(juce::Graphics &g)
     g.drawImage(oscillatorLogo, getWidth() / 2 - oscillatorLogo.getWidth() / 2, 20, 500, 100, 0, 0, 500, 100);
 
     // Calculate the bounds for the rectangle
-    left = 20;
-    right = (float)getWidth() - 20;
-    top = 60;
-    bottom = (float)getHeight() - 150;
+    float left = 20;
+    float right = (float)getWidth() - 20;
+    float top = 60;
+    float bottom = (float)getHeight() - 150;
     juce::Path rectanglePath;
     rectanglePath.addRectangle(left, top, right - left, bottom - top);
     g.strokePath(rectanglePath, juce::PathStrokeType(5.0f));
@@ -55,9 +55,6 @@ void PluginEditor::resized()
 
 void PluginEditor::timerCallback()
 {
-    drawBuffer0 = audioProcessor.getAudioBuffer(0);
-    drawBuffer1 = audioProcessor.getAudioBuffer(1);
-    drawBuffer2 = audioProcessor.getAudioBuffer(2);
     repaint();
 }
 
@@ -66,63 +63,64 @@ void PluginEditor::timerCallback()
 void PluginEditor::drawWaveform(juce::Graphics &g)
 {
     // Define your rectangle bounds and stroke size
-    strokeSize = 5.0f;                                           // Stroke width for the rectangle
-    left = 20 + strokeSize;                                      // Adjust left bound
-    right = static_cast<float>(getWidth()) - 20 - strokeSize;    // Adjust right bound
-    top = 60 + strokeSize;                                       // Adjust top bound
-    bottom = static_cast<float>(getHeight()) - 150 - strokeSize; // Adjust bottom bound
+    float left = 20 + strokeSize + 0.8f;                                      // Adjust left bound
+    float right = static_cast<float>(getWidth()) - 20 - strokeSize - 0.8f;    // Adjust right bound
+    float top = 60 + strokeSize + 0.8f;                                       // Adjust top bound
+    float bottom = static_cast<float>(getHeight()) - 150 - strokeSize - 0.8f; // Adjust bottom bound
+    const float adjustedWidth = right - left;                                 // Width of the drawing area
+    const float adjustedHeight = bottom - top;                                // Height of the drawing area
 
-    const float adjustedWidth = right - left;  // Width of the drawing area
-    const float adjustedHeight = bottom - top; // Height of the drawing area
+    // Fetch histories from the processor
+    const auto &mainHistory = audioProcessor.getAudioHistory(0);
+    const auto &sidechain0History = audioProcessor.getAudioHistory(1);
+    const auto &sidechain1History = audioProcessor.getAudioHistory(2);
 
-    const int numSamples = drawBuffer0.getNumSamples();
-    if (numSamples == 0)
-        return; // Early exit if there's no audio data
+    // Check if histories are empty
+    // if (mainHistory.empty() && sidechain0History.empty() && sidechain1History.empty())
+    //     return;
 
-    // Helper function to draw a waveform from an audio buffer
-    auto drawWaveformFromBuffer = [&](juce::AudioBuffer<float> &buffer, juce::Colour color)
+    // Helper function to draw a waveform from a history of audio buffers
+    auto drawWaveformFromHistory = [&](const std::deque<juce::AudioBuffer<float>> &bufferHistory, juce::Colour color)
     {
-        const int numSamples = buffer.getNumSamples();
-        if (numSamples == 0)
-            return;
-
-        for (int i = 1; i < numSamples; ++i)
+        // Loop through each buffer in the history
+        for (const auto &buffer : bufferHistory)
         {
-            float x1 = left + ((i - 1) * adjustedWidth / numSamples) * xScale;
-            float x2 = left + (i * adjustedWidth / numSamples) * xScale;
+            const int numSamples = buffer.getNumSamples();
+            if (numSamples == 0)
+                continue; // Skip empty buffers
 
-            // Clamp x values to the rectangle's width
-            if (x1 > right)
-                x1 = right;
-            if (x2 > right)
-                x2 = right;
+            for (int i = 1; i < numSamples; ++i)
+            {
+                // Adjust x positions based on the zoom scale
+                float x1 = left + ((i - 1) * adjustedWidth / numSamples) * xScale;
+                float x2 = left + (i * adjustedWidth / numSamples) * xScale;
 
-            // get mono sample from stereo input
-            float monoSample1 = 0.5f * (buffer.getSample(0, i - 1) + buffer.getSample(1, i - 1));
-            float monoSample2 = 0.5f * (buffer.getSample(0, i) + buffer.getSample(1, i));
-            // Calculate y positions, scaling to fit inside the rectangle's adjusted height
-            float y1 = top + adjustedHeight / 2.0f + monoSample1 * yScale * (adjustedHeight / 2.0f);
-            float y2 = top + adjustedHeight / 2.0f + monoSample2 * yScale * (adjustedHeight / 2.0f);
+                // Ensure x1 and x2 are within bounds
+                x1 = std::min(x1, right);
+                x2 = std::min(x2, right);
 
-            // Clamp y values to the rectangle's adjusted height
-            if (y1 < top)
-                y1 = top;
-            if (y1 > bottom)
-                y1 = bottom;
-            if (y2 < top)
-                y2 = top;
-            if (y2 > bottom)
-                y2 = bottom;
+                // Get mono sample from stereo input (average of left and right channels)
+                float monoSample1 = 0.5f * (buffer.getSample(0, i - 1) + buffer.getSample(1, i - 1));
+                float monoSample2 = 0.5f * (buffer.getSample(0, i) + buffer.getSample(1, i));
 
-            g.setColour(color);
-            g.drawLine(x1, y1, x2, y2, 2.5f);
+                // Calculate y positions, scaling to fit inside the rectangle's adjusted height
+                float y1 = top + adjustedHeight / 2.0f + monoSample1 * yScale * (adjustedHeight / 2.0f);
+                float y2 = top + adjustedHeight / 2.0f + monoSample2 * yScale * (adjustedHeight / 2.0f);
+
+                // Clamp y values to the rectangle's adjusted height
+                y1 = juce::jlimit(top, bottom, y1);
+                y2 = juce::jlimit(top, bottom, y2);
+
+                // Draw the waveform line
+                g.setColour(color);
+                g.drawLine(x1, y1, x2, y2, 2.5f);
+            }
         }
     };
 
-    // Draw waveforms for the three buffers with different colors
-    drawWaveformFromBuffer(drawBuffer0, juce::Colours::green); // Main input buffer
-    drawWaveformFromBuffer(drawBuffer1, juce::Colours::blue);  // Sidechain 1 buffer
-    drawWaveformFromBuffer(drawBuffer2, juce::Colours::red);   // Sidechain 2 buffer
+    drawWaveformFromHistory(mainHistory, juce::Colours::green);
+    drawWaveformFromHistory(sidechain0History, juce::Colours::red);
+    drawWaveformFromHistory(sidechain1History, juce::Colours::blue);
 }
 
 void PluginEditor::setXScale(float newXScale)
@@ -144,7 +142,7 @@ void PluginEditor::setupSliders()
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    bufferSlider.setRange(0.1, 10, 0.1);
+    bufferSlider.setRange(0.01, 10, 0.01);
     bufferSlider.setValue(1.0);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
@@ -168,7 +166,7 @@ void PluginEditor::setupSliders()
     gainSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     gainSlider.setLookAndFeel(customLookAndFeel.get());
     gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    gainSlider.setRange(0.1, 6, 0.1);
+    gainSlider.setRange(0.01, 6, 0.01);
     gainSlider.setValue(1.0);
     gainSlider.onValueChange = [this]()
     {
