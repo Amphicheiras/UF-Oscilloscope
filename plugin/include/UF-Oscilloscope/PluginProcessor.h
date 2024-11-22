@@ -52,11 +52,17 @@ public:
             mainInputBufferHistory.setSize(getTotalNumOutputChannels(), historyBufferSize);
             mainInputBufferHistory.clear();
 
-            sidechainBuffer0History.setSize(2, historyBufferSize);
-            sidechainBuffer0History.clear();
-
             sidechainBuffer1History.setSize(2, historyBufferSize);
             sidechainBuffer1History.clear();
+
+            sidechainBuffer2History.setSize(2, historyBufferSize);
+            sidechainBuffer2History.clear();
+
+            sidechainBuffer3History.setSize(2, historyBufferSize);
+            sidechainBuffer3History.clear();
+
+            sidechainBuffer4History.setSize(2, historyBufferSize);
+            sidechainBuffer4History.clear();
         }
     }
 
@@ -65,13 +71,17 @@ public:
 
 private:
     juce::AudioBuffer<float> mainInputBuffer;
-    juce::AudioBuffer<float> sidechainBuffer0;
     juce::AudioBuffer<float> sidechainBuffer1;
+    juce::AudioBuffer<float> sidechainBuffer2;
+    juce::AudioBuffer<float> sidechainBuffer3;
+    juce::AudioBuffer<float> sidechainBuffer4;
     int historyBufferSize = 4096;
     int currentIndex = 0;
     juce::AudioBuffer<float> mainInputBufferHistory;
-    juce::AudioBuffer<float> sidechainBuffer0History;
     juce::AudioBuffer<float> sidechainBuffer1History;
+    juce::AudioBuffer<float> sidechainBuffer2History;
+    juce::AudioBuffer<float> sidechainBuffer3History;
+    juce::AudioBuffer<float> sidechainBuffer4History;
 
     juce::Optional<double> bpm;
 

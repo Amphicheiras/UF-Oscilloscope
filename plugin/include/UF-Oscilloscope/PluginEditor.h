@@ -27,7 +27,14 @@ private:
     float xScale = 1.0f;
     float yScale = 1.0f;
 
+    int numOfInputs;
+
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
+
+    juce::ComboBox inputComboBox;
+    juce::Label inputComboBoxLabel;
+
+    void inputComboBoxChanged();
 
     juce::Slider bufferSlider;
     juce::Label bufferLabel;
