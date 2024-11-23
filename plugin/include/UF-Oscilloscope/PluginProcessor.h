@@ -48,21 +48,13 @@ public:
     juce::Optional<double> getBPM();
 
 private:
-    bool historyFlag = false;
-    juce::AudioBuffer<float> mainInputBuffer;
-    juce::AudioBuffer<float> sidechainBuffer1;
-    juce::AudioBuffer<float> sidechainBuffer2;
-    juce::AudioBuffer<float> sidechainBuffer3;
-    juce::AudioBuffer<float> sidechainBuffer4;
-    // std::vector<juce::AudioBuffer<float>> sidechainBuffer;
+    bool historyBufferFlag = false;
     int historyBufferSize = 75000;
-    std::vector<int> currentIndex{0, 0};
-    juce::AudioBuffer<float> mainInputBufferHistory;
-    juce::AudioBuffer<float> sidechainBuffer1History;
-    juce::AudioBuffer<float> sidechainBuffer2History;
-    juce::AudioBuffer<float> sidechainBuffer3History;
-    juce::AudioBuffer<float> sidechainBuffer4History;
-    // std::vector<juce::AudioBuffer<float>> sidechainBufferHistory;
+    int numSidechainInputs = 5;
+
+    std::vector<juce::AudioBuffer<float>> inputBuffers;
+    std::vector<juce::AudioBuffer<float>> inputHistories;
+    std::vector<int> historyBufferIndex;
 
     juce::Optional<double> bpm;
 

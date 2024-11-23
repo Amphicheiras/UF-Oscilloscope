@@ -133,24 +133,24 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
     }
     if (numOfInputs > 1)
     {
-        const auto sidechainBuffer0History = audioProcessor.getHistoryBuffer(1);
-        drawWaveformFromHistory(sidechainBuffer0History, juce::Colours::red);
+        const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(1);
+        drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::red);
     }
-    // if (numOfInputs > 2)
-    // {
-    //     const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(2);
-    //     drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::blue);
-    // }
-    // if (numOfInputs > 3)
-    // {
-    //     const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
-    //     drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::wheat);
-    // }
-    // if (numOfInputs > 4)
-    // {
-    //     const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
-    //     drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::yellow);
-    // }
+    if (numOfInputs > 2)
+    {
+        const auto sidechainBuffer2History = audioProcessor.getHistoryBuffer(2);
+        drawWaveformFromHistory(sidechainBuffer2History, juce::Colours::blue);
+    }
+    if (numOfInputs > 3)
+    {
+        const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
+        drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::wheat);
+    }
+    if (numOfInputs > 4)
+    {
+        const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
+        drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::yellow);
+    }
     // ! TEST Λ
 }
 

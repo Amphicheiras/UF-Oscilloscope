@@ -6,9 +6,9 @@ PluginProcessor::PluginProcessor()
           BusesProperties()
               .withInput("MainInput", juce::AudioChannelSet::stereo())
               .withInput("AuxInput1", juce::AudioChannelSet::stereo())
-              //   .withInput("AuxInput2", juce::AudioChannelSet::stereo())
-              //   .withInput("AuxInput3", juce::AudioChannelSet::stereo())
-              //   .withInput("AuxInput4", juce::AudioChannelSet::stereo())
+              .withInput("AuxInput2", juce::AudioChannelSet::stereo())
+              .withInput("AuxInput3", juce::AudioChannelSet::stereo())
+              .withInput("AuxInput4", juce::AudioChannelSet::stereo())
               .withOutput("Output", juce::AudioChannelSet::stereo()))
 {
 }
@@ -84,28 +84,25 @@ void PluginProcessor::changeProgramName(int index,
 void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-    mainInputBufferHistory.setSize(2, historyBufferSize);
-    sidechainBuffer1History.setSize(2, historyBufferSize);
-    // sidechainBuffer2History.setSize(2, historyBufferSize);
-    // sidechainBuffer3History.setSize(2, historyBufferSize);
-    // sidechainBuffer4History.setSize(2, historyBufferSize);
-    // clear the buffer with zeroes
-    mainInputBufferHistory.clear();
-    sidechainBuffer1History.clear();
-    // sidechainBuffer2History.clear();
-    // sidechainBuffer3History.clear();
-    // sidechainBuffer4History.clear();
+
+    inputBuffers.resize(numSidechainInputs);
+    inputHistories.resize(numSidechainInputs);
+    historyBufferIndex.resize(numSidechainInputs, 0);
+
+    for (int bufferID = 0; bufferID < numSidechainInputs; ++bufferID)
+    {
+        inputBuffers[bufferID].setSize(2, samplesPerBlock);
+        inputHistories[bufferID].setSize(2, historyBufferSize);
+        inputBuffers[bufferID].clear();
+    }
 }
 
 void PluginProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
-    mainInputBufferHistory.clear();
-    sidechainBuffer1History.clear();
-    // sidechainBuffer2History.clear();
-    // sidechainBuffer3History.clear();
-    // sidechainBuffer4History.clear();
+    for (auto &buffer : inputHistories)
+    {
+        buffer.clear();
+    }
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
@@ -135,11 +132,6 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                    juce::MidiBuffer &midiMessages)
 {
-    mainInputBuffer = getBusBuffer(buffer, true, 0);
-    sidechainBuffer1 = getBusBuffer(buffer, true, 1);
-    // sidechainBuffer2 = getBusBuffer(buffer, true, 2);
-    // sidechainBuffer3 = getBusBuffer(buffer, true, 3);
-    // sidechainBuffer4 = getBusBuffer(buffer, true, 4);
     auto output = getBusBuffer(buffer, false, 0);
     // **************************************************
     juce::ignoreUnused(midiMessages);
@@ -151,37 +143,17 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         buffer.clear(channel, 0, numSamples);
     // **************************************************
 
-    processBufferHistory(mainInputBufferHistory, mainInputBuffer, 2, numSamples, 0);
-    output.addFrom(0, 0, mainInputBuffer, 0, 0, numSamples);
-    output.addFrom(1, 0, mainInputBuffer, 1, 0, numSamples);
-
-    if (sidechainBuffer1.getNumChannels() > 1)
+    for (int bufferID = 0; bufferID < numSidechainInputs; ++bufferID)
     {
-        processBufferHistory(sidechainBuffer1History, sidechainBuffer1, 2, numSamples, 1);
-        output.addFrom(0, 0, sidechainBuffer1, 0, 0, numSamples);
-        output.addFrom(1, 0, sidechainBuffer1, 1, 0, numSamples);
+        auto sidechainBuffer = getBusBuffer(buffer, true, bufferID);
+
+        if (sidechainBuffer.getNumChannels() > 0)
+        {
+            processBufferHistory(inputHistories[bufferID], sidechainBuffer, 2, numSamples, bufferID);
+            output.addFrom(0, 0, sidechainBuffer, 0, 0, numSamples);
+            output.addFrom(1, 0, sidechainBuffer, 1, 0, numSamples);
+        }
     }
-
-    // if (sidechainBuffer2.getNumChannels() > 1)
-    // {
-    //     processBufferHistory(sidechainBuffer2History, sidechainBuffer2, 2, numSamples);
-    //     output.addFrom(0, 0, sidechainBuffer2, 0, 0, numSamples);
-    //     output.addFrom(1, 0, sidechainBuffer2, 1, 0, numSamples);
-    // }
-
-    // if (sidechainBuffer3.getNumChannels() > 1)
-    // {
-    //     processBufferHistory(sidechainBuffer3History, sidechainBuffer3, 2, numSamples);
-    //     output.addFrom(0, 0, sidechainBuffer3, 0, 0, numSamples);
-    //     output.addFrom(1, 0, sidechainBuffer3, 1, 0, numSamples);
-    // }
-
-    // if (sidechainBuffer4.getNumChannels() > 1)
-    // {
-    //     processBufferHistory(sidechainBuffer4History, sidechainBuffer4, 2, numSamples);
-    //     output.addFrom(0, 0, sidechainBuffer4, 0, 0, numSamples);
-    //     output.addFrom(1, 0, sidechainBuffer4, 1, 0, numSamples);
-    // }
 
     setBPM();
 }
@@ -228,34 +200,23 @@ juce::Optional<double> PluginProcessor::getBPM()
 // Get audio history
 const juce::AudioBuffer<float> &PluginProcessor::getHistoryBuffer(int channel) const
 {
-    if (channel == 0)
-        return mainInputBufferHistory;
-    else if (channel == 1)
-        return sidechainBuffer1History;
-    // else if (channel == 2)
-    //     return sidechainBuffer2History;
-    // else if (channel == 3)
-    //     return sidechainBuffer3History;
-    // else if (channel == 4)
-    //     return sidechainBuffer4History;
-    return mainInputBufferHistory;
+    return inputHistories[channel];
 }
 
 void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples, int bufferID)
 {
-    if (historyFlag)
+    if (historyBufferFlag)
     {
         historyBuffer.setSize(numChannels, historyBufferSize);
         historyBuffer.clear();
-
-        historyFlag = false;
+        historyBufferFlag = false;
     }
 
     int bufferCopySize = std::min(historyBufferSize, numSamples);
 
     for (int channel = 0; channel < numChannels; ++channel)
     {
-        float *historyChannelPointer = historyBuffer.getWritePointer(channel); // Get write pointer for each channel
+        auto *historyChannelPointer = historyBuffer.getWritePointer(channel);
         auto *bufferChannelPointer = buffer.getReadPointer(channel);
         // If history buffer is smaller than the audio buffer
         if (historyBufferSize < numSamples)
@@ -266,17 +227,18 @@ void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuff
         {
             for (int sample = 0; sample < numSamples; ++sample)
             {
-                historyChannelPointer[(currentIndex[bufferID] + sample) % historyBufferSize] = bufferChannelPointer[sample];
+                historyChannelPointer[(historyBufferIndex[bufferID] + sample) % historyBufferSize] = bufferChannelPointer[sample];
             }
         }
     }
-    currentIndex[bufferID] = (currentIndex[bufferID] + numSamples) % historyBufferSize;
+
+    historyBufferIndex[bufferID] = (historyBufferIndex[bufferID] + numSamples) % historyBufferSize;
 }
 
 void PluginProcessor::setHistoryBufferSize(int size)
 {
     historyBufferSize = size;
-    historyFlag = true;
+    historyBufferFlag = true;
 }
 
 // This creates new instances of the plugin.
