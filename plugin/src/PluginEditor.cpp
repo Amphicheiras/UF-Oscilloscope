@@ -136,28 +136,28 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
         const auto sidechainBuffer0History = audioProcessor.getHistoryBuffer(1);
         drawWaveformFromHistory(sidechainBuffer0History, juce::Colours::red);
     }
-    if (numOfInputs > 2)
-    {
-        const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(2);
-        drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::blue);
-    }
-    if (numOfInputs > 3)
-    {
-        const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
-        drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::red);
-    }
-    if (numOfInputs > 4)
-    {
-        const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
-        drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::blue);
-    }
+    // if (numOfInputs > 2)
+    // {
+    //     const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(2);
+    //     drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::blue);
+    // }
+    // if (numOfInputs > 3)
+    // {
+    //     const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
+    //     drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::wheat);
+    // }
+    // if (numOfInputs > 4)
+    // {
+    //     const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
+    //     drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::yellow);
+    // }
     // ! TEST Λ
 }
 
 void PluginEditor::setXScale(int newXScale)
 {
     // xScale = newXScale;
-    audioProcessor.setHistorySize(newXScale);
+    audioProcessor.setHistoryBufferSize(newXScale);
 }
 
 void PluginEditor::setYScale(float newYScale)
@@ -175,7 +175,7 @@ void PluginEditor::setupSliders()
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     bufferSlider.setRange(32, 75000, 1);
-    bufferSlider.setValue(4096);
+    bufferSlider.setValue(75000);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
     bufferSlider.onValueChange = [this]()

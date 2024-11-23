@@ -39,49 +39,30 @@ public:
 
     // ***********************************************************
 
-    void processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples);
+    void processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples, int bufferID);
     const juce::AudioBuffer<float> &getHistoryBuffer(int channel) const;
 
-    void setHistorySize(int size)
-    {
-        if (size != historyBufferSize)
-        {
-            historyBufferSize = size;
-
-            // Resize and clear the buffers
-            mainInputBufferHistory.setSize(getTotalNumOutputChannels(), historyBufferSize);
-            mainInputBufferHistory.clear();
-
-            sidechainBuffer1History.setSize(2, historyBufferSize);
-            sidechainBuffer1History.clear();
-
-            sidechainBuffer2History.setSize(2, historyBufferSize);
-            sidechainBuffer2History.clear();
-
-            sidechainBuffer3History.setSize(2, historyBufferSize);
-            sidechainBuffer3History.clear();
-
-            sidechainBuffer4History.setSize(2, historyBufferSize);
-            sidechainBuffer4History.clear();
-        }
-    }
+    void setHistoryBufferSize(int size);
 
     void setBPM();
     juce::Optional<double> getBPM();
 
 private:
+    bool historyFlag = false;
     juce::AudioBuffer<float> mainInputBuffer;
     juce::AudioBuffer<float> sidechainBuffer1;
     juce::AudioBuffer<float> sidechainBuffer2;
     juce::AudioBuffer<float> sidechainBuffer3;
     juce::AudioBuffer<float> sidechainBuffer4;
-    int historyBufferSize = 4096;
-    int currentIndex = 0;
+    // std::vector<juce::AudioBuffer<float>> sidechainBuffer;
+    int historyBufferSize = 75000;
+    std::vector<int> currentIndex{0, 0};
     juce::AudioBuffer<float> mainInputBufferHistory;
     juce::AudioBuffer<float> sidechainBuffer1History;
     juce::AudioBuffer<float> sidechainBuffer2History;
     juce::AudioBuffer<float> sidechainBuffer3History;
     juce::AudioBuffer<float> sidechainBuffer4History;
+    // std::vector<juce::AudioBuffer<float>> sidechainBufferHistory;
 
     juce::Optional<double> bpm;
 
