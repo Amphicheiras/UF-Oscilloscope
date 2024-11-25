@@ -9,7 +9,7 @@ PluginEditor::PluginEditor(
 
     loadLogo();
 
-    setSize(400, 500);
+    setSize(550, 500);
     startTimerHz(60);
 }
 
@@ -42,15 +42,19 @@ void PluginEditor::resized()
 {
     auto gainSliderWidth = 70;
     auto gainSliderHeight = 100;
-    gainSlider.setBounds(1 * getWidth() / 6 - gainSliderWidth / 2 + 40, 385, gainSliderWidth, gainSliderHeight);
+    gainSlider.setBounds(1 * getWidth() / 8 - gainSliderWidth / 2 + 40, 385, gainSliderWidth, gainSliderHeight);
 
     auto bufferSliderWidth = 70;
     auto bufferSliderHeight = 100;
-    bufferSlider.setBounds(5 * getWidth() / 6 - bufferSliderWidth / 2 - 40, 385, bufferSliderWidth, bufferSliderHeight);
+    bufferSlider.setBounds(7 * getWidth() / 8 - bufferSliderWidth / 2 - 40, 385, bufferSliderWidth, bufferSliderHeight);
 
     auto syncButtonWidth = 40;
     auto syncButtonHeight = 100;
-    syncButton.setBounds(3 * getWidth() / 6 - syncButtonWidth / 4, 400, syncButtonWidth, syncButtonHeight);
+    syncButton.setBounds(3 * getWidth() / 8 - syncButtonWidth / 4, 400, syncButtonWidth, syncButtonHeight);
+
+    auto inputComboBoxWidth = 50;
+    auto inputComboBoxHeight = 50;
+    inputComboBox.setBounds(5 * getWidth() / 8 - inputComboBoxWidth / 2 - 40, 400, inputComboBoxWidth, inputComboBoxHeight);
 }
 
 void PluginEditor::timerCallback()
@@ -70,62 +74,90 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
     const float adjustedWidth = right - left;                                 // Width of the drawing area
     const float adjustedHeight = bottom - top;                                // Height of the drawing area
 
-    // Fetch histories from the processor
-    const auto &mainHistory = audioProcessor.getAudioHistory(0);
-    const auto &sidechain0History = audioProcessor.getAudioHistory(1);
-    const auto &sidechain1History = audioProcessor.getAudioHistory(2);
-
     // Check if histories are empty
     // if (mainHistory.empty() && sidechain0History.empty() && sidechain1History.empty())
     //     return;
 
-    // Helper function to draw a waveform from a history of audio buffers
-    auto drawWaveformFromHistory = [&](const std::deque<juce::AudioBuffer<float>> &bufferHistory, juce::Colour color)
+    auto drawWaveformFromHistory = [&](const juce::AudioBuffer<float> &bufferHistory, juce::Colour color)
     {
-        // Loop through each buffer in the history
-        for (const auto &buffer : bufferHistory)
+        const int numSamples = bufferHistory.getNumSamples();
+        const int numChannels = bufferHistory.getNumChannels();
+
+        if (numSamples == 0 || numChannels == 0)
+            return;
+
+        const int pixels = 400;                            // Width of the drawing window
+        const int step = std::max(1, numSamples / pixels); // Number of samples per pixel
+        const int reducedSamples = numSamples / step;
+
+        float prevX = left;                        // Initialize the previous x position
+        float prevY = top + adjustedHeight / 2.0f; // Initialize the previous y position
+
+        for (int i = 0; i < reducedSamples; ++i)
         {
-            const int numSamples = buffer.getNumSamples();
-            if (numSamples == 0)
-                continue; // Skip empty buffers
+            // Calculate start index for this step
+            const int startIdx = i * step;
 
-            for (int i = 1; i < numSamples; ++i)
+            // Select one representative sample (e.g., the first sample of the step)
+            float sampleValue = 0.0f;
+            for (int ch = 0; ch < numChannels; ++ch)
             {
-                // Adjust x positions based on the zoom scale
-                float x1 = left + ((i - 1) * adjustedWidth / numSamples) * xScale;
-                float x2 = left + (i * adjustedWidth / numSamples) * xScale;
-
-                // Ensure x1 and x2 are within bounds
-                x1 = std::min(x1, right);
-                x2 = std::min(x2, right);
-
-                // Get mono sample from stereo input (average of left and right channels)
-                float monoSample1 = 0.5f * (buffer.getSample(0, i - 1) + buffer.getSample(1, i - 1));
-                float monoSample2 = 0.5f * (buffer.getSample(0, i) + buffer.getSample(1, i));
-
-                // Calculate y positions, scaling to fit inside the rectangle's adjusted height
-                float y1 = top + adjustedHeight / 2.0f + monoSample1 * yScale * (adjustedHeight / 2.0f);
-                float y2 = top + adjustedHeight / 2.0f + monoSample2 * yScale * (adjustedHeight / 2.0f);
-
-                // Clamp y values to the rectangle's adjusted height
-                y1 = juce::jlimit(top, bottom, y1);
-                y2 = juce::jlimit(top, bottom, y2);
-
-                // Draw the waveform line
-                g.setColour(color);
-                g.drawLine(x1, y1, x2, y2, 2.5f);
+                sampleValue += bufferHistory.getSample(ch, startIdx); // Aggregate across channels
             }
+            sampleValue /= numChannels; // Average across channels
+
+            // Calculate current x and y positions
+            float x = left + (i * adjustedWidth / reducedSamples) * xScale;
+            float y = top + adjustedHeight / 2.0f + sampleValue * yScale * (adjustedHeight / 2.0f);
+
+            // Clamp y values to stay within bounds
+            y = juce::jlimit(top, bottom, y);
+
+            if (i > 0) // Draw only if there's a previous point
+            {
+                g.setColour(color);
+                g.drawLine(prevX, prevY, x, y, strokeSize);
+            }
+
+            // Update previous x and y for the next line segment
+            prevX = x;
+            prevY = y;
         }
     };
 
-    drawWaveformFromHistory(mainHistory, juce::Colours::green);
-    drawWaveformFromHistory(sidechain0History, juce::Colours::red);
-    drawWaveformFromHistory(sidechain1History, juce::Colours::blue);
+    // ! TEST V
+    if (numOfInputs > 0)
+    {
+        const auto mainInputBufferHistory = audioProcessor.getHistoryBuffer(0);
+        drawWaveformFromHistory(mainInputBufferHistory, juce::Colours::green);
+    }
+    if (numOfInputs > 1)
+    {
+        const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(1);
+        drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::red);
+    }
+    if (numOfInputs > 2)
+    {
+        const auto sidechainBuffer2History = audioProcessor.getHistoryBuffer(2);
+        drawWaveformFromHistory(sidechainBuffer2History, juce::Colours::blue);
+    }
+    if (numOfInputs > 3)
+    {
+        const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
+        drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::wheat);
+    }
+    if (numOfInputs > 4)
+    {
+        const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
+        drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::yellow);
+    }
+    // ! TEST Λ
 }
 
-void PluginEditor::setXScale(float newXScale)
+void PluginEditor::setXScale(int newXScale)
 {
-    xScale = newXScale;
+    // xScale = newXScale;
+    audioProcessor.setHistoryBufferSize(newXScale);
 }
 
 void PluginEditor::setYScale(float newYScale)
@@ -136,31 +168,31 @@ void PluginEditor::setYScale(float newYScale)
 void PluginEditor::setupSliders()
 {
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
-    addAndMakeVisible(bufferSlider);
+
     bufferSlider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::wheat);
     bufferSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
     bufferSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    bufferSlider.setRange(0.01, 10, 0.01);
-    bufferSlider.setValue(1.0);
+    bufferSlider.setRange(32, 75000, 1);
+    bufferSlider.setValue(75000);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
     bufferSlider.onValueChange = [this]()
     {
-        setXScale((float)bufferSlider.getValue());
+        setXScale(static_cast<int>(bufferSlider.getValue()));
     };
     // bufferSlider.onDoubleClick = [this]() {
 
     // };
-    addAndMakeVisible(bufferLabel);
+    addAndMakeVisible(bufferSlider);
     bufferLabel.setName("bufferLabel");
     bufferLabel.setColour(juce::Label::textColourId, juce::Colours::wheat);
     bufferLabel.setText("TIME", juce::NotificationType::dontSendNotification);
     bufferLabel.setJustificationType(juce::Justification::centred);
     bufferLabel.attachToComponent(&bufferSlider, false);
+    addAndMakeVisible(bufferLabel);
 
-    addAndMakeVisible(gainSlider);
     gainSlider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::wheat);
     gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
     gainSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
@@ -172,14 +204,14 @@ void PluginEditor::setupSliders()
     {
         setYScale((float)gainSlider.getValue());
     };
-    addAndMakeVisible(gainLabel);
+    addAndMakeVisible(gainSlider);
     gainLabel.setName("gainLabel");
     gainLabel.setColour(juce::Label::textColourId, juce::Colours::wheat);
     gainLabel.setText("GAIN", juce::NotificationType::dontSendNotification);
     gainLabel.setJustificationType(juce::Justification::centred);
     gainLabel.attachToComponent(&gainSlider, false);
+    addAndMakeVisible(gainLabel);
 
-    addAndMakeVisible(syncButton);
     syncButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     syncButton.onClick = [this]()
     {
@@ -196,12 +228,29 @@ void PluginEditor::setupSliders()
         }
         startTimerHz(60);
     };
-    addAndMakeVisible(syncLabel);
+    addAndMakeVisible(syncButton);
     syncLabel.setName("syncLabel");
     syncLabel.setColour(juce::Label::textColourId, juce::Colours::wheat);
     syncLabel.setText("Sync", juce::NotificationType::dontSendNotification);
     syncLabel.setJustificationType(juce::Justification::centred);
     syncLabel.attachToComponent(&syncButton, false);
+    addAndMakeVisible(syncLabel);
+
+    inputComboBox.addItem("0", 1);
+    inputComboBox.addItem("1", 2);
+    inputComboBox.addItem("2", 3);
+    inputComboBox.addItem("3", 4);
+    inputComboBox.addItem("4", 5);
+    inputComboBox.setSelectedId(1);
+    inputComboBox.onChange = [this]()
+    { inputComboBoxChanged(); };
+    addAndMakeVisible(inputComboBox);
+    inputComboBoxLabel.setName("inputComboBoxLabel");
+    inputComboBoxLabel.setColour(juce::Label::textColourId, juce::Colours::wheat);
+    inputComboBoxLabel.setText("#Ins", juce::NotificationType::dontSendNotification);
+    inputComboBoxLabel.setJustificationType(juce::Justification::centred);
+    inputComboBoxLabel.attachToComponent(&inputComboBox, false);
+    addAndMakeVisible(inputComboBoxLabel);
 }
 
 void PluginEditor::loadLogo()
@@ -234,10 +283,15 @@ void PluginEditor::sliderValueChanged(juce::Slider *slider)
 {
     if (slider == &bufferSlider)
     {
-        setXScale((float)bufferSlider.getValue());
+        setXScale((int)bufferSlider.getValue());
     }
     else if (slider == &gainSlider)
     {
         setYScale((float)gainSlider.getValue());
     }
+}
+
+void PluginEditor::inputComboBoxChanged()
+{
+    numOfInputs = inputComboBox.getSelectedId();
 }
