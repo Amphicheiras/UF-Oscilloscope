@@ -85,15 +85,17 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(sampleRate, samplesPerBlock);
 
-    inputBuffers.resize(numSidechainInputs);
-    inputHistories.resize(numSidechainInputs);
-    historyBufferIndex.resize(numSidechainInputs, 0);
+    inputBuffers.resize(numInputs);
+    inputHistories.resize(numInputs);
+    historyBufferIndex.resize(numInputs, 0);
 
-    for (int bufferID = 0; bufferID < numSidechainInputs; ++bufferID)
+    for (int bufferID = 0; bufferID < numInputs; ++bufferID)
     {
         inputBuffers[bufferID].setSize(2, samplesPerBlock);
-        inputHistories[bufferID].setSize(2, historyBufferSize);
         inputBuffers[bufferID].clear();
+
+        inputHistories[bufferID].setSize(2, historyBufferSize);
+        inputHistories[bufferID].clear();
     }
 }
 
@@ -143,7 +145,13 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         buffer.clear(channel, 0, numSamples);
     // **************************************************
 
-    for (int bufferID = 0; bufferID < numSidechainInputs; ++bufferID)
+    if (historyBufferFlag)
+    {
+        setHistoryBufferSize();
+        historyBufferFlag = false;
+    }
+
+    for (int bufferID = 0; bufferID < numInputs; ++bufferID)
     {
         auto sidechainBuffer = getBusBuffer(buffer, true, bufferID);
 
@@ -205,13 +213,6 @@ const juce::AudioBuffer<float> &PluginProcessor::getHistoryBuffer(int channel) c
 
 void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples, int bufferID)
 {
-    if (historyBufferFlag)
-    {
-        historyBuffer.setSize(numChannels, historyBufferSize);
-        historyBuffer.clear();
-        historyBufferFlag = false;
-    }
-
     int bufferCopySize = std::min(historyBufferSize, numSamples);
 
     for (int channel = 0; channel < numChannels; ++channel)
@@ -235,10 +236,19 @@ void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuff
     historyBufferIndex[bufferID] = (historyBufferIndex[bufferID] + numSamples) % historyBufferSize;
 }
 
-void PluginProcessor::setHistoryBufferSize(int size)
+void PluginProcessor::timeAxisChanged(int size)
 {
     historyBufferSize = size;
     historyBufferFlag = true;
+}
+
+void PluginProcessor::setHistoryBufferSize()
+{
+    for (int bufferID = 0; bufferID < numInputs; ++bufferID)
+    {
+        inputHistories[bufferID].setSize(2, historyBufferSize);
+        inputHistories[bufferID].clear();
+    }
 }
 
 // This creates new instances of the plugin.

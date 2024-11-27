@@ -49,8 +49,12 @@ void PluginEditor::resized()
     bufferSlider.setBounds(7 * getWidth() / 8 - bufferSliderWidth / 2 - 40, 385, bufferSliderWidth, bufferSliderHeight);
 
     auto syncButtonWidth = 40;
-    auto syncButtonHeight = 100;
+    auto syncButtonHeight = 50;
     syncButton.setBounds(3 * getWidth() / 8 - syncButtonWidth / 4, 400, syncButtonWidth, syncButtonHeight);
+    syncLabel.setBounds(syncButton.getX() - 5,
+                        syncButton.getY() - 20, // Position it above the button
+                        syncButtonWidth,        // Match the width of the button
+                        20);
 
     auto inputComboBoxWidth = 50;
     auto inputComboBoxHeight = 50;
@@ -156,8 +160,7 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
 
 void PluginEditor::setXScale(int newXScale)
 {
-    // xScale = newXScale;
-    audioProcessor.setHistoryBufferSize(newXScale);
+    audioProcessor.timeAxisChanged(newXScale);
 }
 
 void PluginEditor::setYScale(float newYScale)

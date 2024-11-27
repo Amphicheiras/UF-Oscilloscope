@@ -42,7 +42,8 @@ public:
     void processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples, int bufferID);
     const juce::AudioBuffer<float> &getHistoryBuffer(int channel) const;
 
-    void setHistoryBufferSize(int size);
+    void timeAxisChanged(int size);
+    void setHistoryBufferSize();
 
     void setBPM();
     juce::Optional<double> getBPM();
@@ -50,7 +51,7 @@ public:
 private:
     bool historyBufferFlag = false;
     int historyBufferSize = 75000;
-    int numSidechainInputs = 5;
+    int numInputs = 5;
 
     std::vector<juce::AudioBuffer<float>> inputBuffers;
     std::vector<juce::AudioBuffer<float>> inputHistories;
