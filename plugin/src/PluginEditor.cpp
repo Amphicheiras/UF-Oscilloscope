@@ -10,7 +10,7 @@ PluginEditor::PluginEditor(
     loadLogo();
 
     setSize(550, 500);
-    startTimerHz(60);
+    startTimerHz(30);
 }
 
 PluginEditor::~PluginEditor()
@@ -78,17 +78,11 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
     const float adjustedWidth = right - left;                                 // Width of the drawing area
     const float adjustedHeight = bottom - top;                                // Height of the drawing area
 
-    // Check if histories are empty
-    // if (mainHistory.empty() && sidechain0History.empty() && sidechain1History.empty())
-    //     return;
-
-    auto drawWaveformFromHistory = [&](const juce::AudioBuffer<float> &bufferHistory, juce::Colour color)
+    for (int bufferID = 0; bufferID < numOfInputs; ++bufferID)
     {
+        const auto bufferHistory = audioProcessor.getHistoryBuffer(bufferID);
         const int numSamples = bufferHistory.getNumSamples();
         const int numChannels = bufferHistory.getNumChannels();
-
-        if (numSamples == 0 || numChannels == 0)
-            return;
 
         const int pixels = 400;                            // Width of the drawing window
         const int step = std::max(1, numSamples / pixels); // Number of samples per pixel
@@ -119,7 +113,7 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
 
             if (i > 0) // Draw only if there's a previous point
             {
-                g.setColour(color);
+                g.setColour(colors[bufferID]);
                 g.drawLine(prevX, prevY, x, y, strokeSize);
             }
 
@@ -127,35 +121,7 @@ void PluginEditor::drawWaveform(juce::Graphics &g)
             prevX = x;
             prevY = y;
         }
-    };
-
-    // ! TEST V
-    if (numOfInputs > 0)
-    {
-        const auto mainInputBufferHistory = audioProcessor.getHistoryBuffer(0);
-        drawWaveformFromHistory(mainInputBufferHistory, juce::Colours::green);
     }
-    if (numOfInputs > 1)
-    {
-        const auto sidechainBuffer1History = audioProcessor.getHistoryBuffer(1);
-        drawWaveformFromHistory(sidechainBuffer1History, juce::Colours::red);
-    }
-    if (numOfInputs > 2)
-    {
-        const auto sidechainBuffer2History = audioProcessor.getHistoryBuffer(2);
-        drawWaveformFromHistory(sidechainBuffer2History, juce::Colours::blue);
-    }
-    if (numOfInputs > 3)
-    {
-        const auto sidechainBuffer3History = audioProcessor.getHistoryBuffer(3);
-        drawWaveformFromHistory(sidechainBuffer3History, juce::Colours::wheat);
-    }
-    if (numOfInputs > 4)
-    {
-        const auto sidechainBuffer4History = audioProcessor.getHistoryBuffer(4);
-        drawWaveformFromHistory(sidechainBuffer4History, juce::Colours::yellow);
-    }
-    // ! TEST Λ
 }
 
 void PluginEditor::setXScale(int newXScale)
@@ -178,7 +144,7 @@ void PluginEditor::setupSliders()
     bufferSlider.setLookAndFeel(customLookAndFeel.get());
     bufferSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     bufferSlider.setRange(32, 75000, 1);
-    bufferSlider.setValue(75000);
+    bufferSlider.setValue(1000);
     bufferSlider.addListener(this);
     bufferSlider.setTextValueSuffix("");
     bufferSlider.onValueChange = [this]()

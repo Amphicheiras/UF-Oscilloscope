@@ -145,10 +145,11 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         buffer.clear(channel, 0, numSamples);
     // **************************************************
 
-    if (historyBufferFlag)
+    if (newHistoryBufferFlag)
     {
+        historyBufferSize = newHistoryBufferSize;
         setHistoryBufferSize();
-        historyBufferFlag = false;
+        newHistoryBufferFlag = false;
     }
 
     for (int bufferID = 0; bufferID < numInputs; ++bufferID)
@@ -158,6 +159,10 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         if (sidechainBuffer.getNumChannels() > 0)
         {
             processBufferHistory(inputHistories[bufferID], sidechainBuffer, 2, numSamples, bufferID);
+
+            int bufferCopySize = std::min(historyBufferSize, numSamples);
+
+            juce::ignoreUnused(inputHistories[bufferID], buffer, 2, numSamples, bufferID, bufferCopySize);
             output.addFrom(0, 0, sidechainBuffer, 0, 0, numSamples);
             output.addFrom(1, 0, sidechainBuffer, 1, 0, numSamples);
         }
@@ -205,14 +210,21 @@ juce::Optional<double> PluginProcessor::getBPM()
     return bpm;
 }
 
+int PluginProcessor::getHistoryBufferSize()
+{
+    return historyBufferSize;
+}
+
 // Get audio history
-const juce::AudioBuffer<float> &PluginProcessor::getHistoryBuffer(int channel) const
+const juce::AudioBuffer<float> &
+PluginProcessor::getHistoryBuffer(int channel) const
 {
     return inputHistories[channel];
 }
 
 void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuffer, const juce::AudioBuffer<float> &buffer, int numChannels, int numSamples, int bufferID)
 {
+
     int bufferCopySize = std::min(historyBufferSize, numSamples);
 
     for (int channel = 0; channel < numChannels; ++channel)
@@ -238,8 +250,8 @@ void PluginProcessor::processBufferHistory(juce::AudioBuffer<float> &historyBuff
 
 void PluginProcessor::timeAxisChanged(int size)
 {
-    historyBufferSize = size;
-    historyBufferFlag = true;
+    newHistoryBufferSize = size;
+    newHistoryBufferFlag = true;
 }
 
 void PluginProcessor::setHistoryBufferSize()

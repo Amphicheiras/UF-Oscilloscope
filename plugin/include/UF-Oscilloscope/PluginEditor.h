@@ -47,7 +47,15 @@ private:
 
     void setupSliders();
 
+    std::vector<juce::Colour> colors = {
+        juce::Colours::green,
+        juce::Colours::red,
+        juce::Colours::blue,
+        juce::Colours::wheat,
+        juce::Colours::yellow};
+
     void drawWaveform(juce::Graphics &g);
+
     juce::Image oscillatorLogo;
 
     void mouseDoubleClick(const juce::MouseEvent &event) override;
